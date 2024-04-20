@@ -2,10 +2,11 @@ const router = require("express").Router();
 const { User, validate } = require("../models/user");
 const _ = require("lodash");
 const bycrypt = require("bcrypt");
+const auth = require("../middlewares/auth");
 
-router.get("/", async (req, res) => {
-  const user = await User.find().sort("name").select("-__v -password");
-  res.status(200).send(user);
+router.get("/me", auth, async (req, res) => {
+  const user = await User.findById(req.user._id).select("-password -__v");
+  res.send(user);
 });
 
 router.post("/", async (req, res) => {
@@ -19,7 +20,11 @@ router.post("/", async (req, res) => {
   user.password = await bycrypt.hash(user.password, salt);
 
   await user.save();
-  res.status(201).send(_.pick(user, ["_id", "name", "email"]));
+  const token = user.generateAuthToken();
+  res
+    .status(201)
+    .header("x-auth-token", token)
+    .send(_.pick(user, ["_id", "name", "email"]));
 });
 
 module.exports = router;

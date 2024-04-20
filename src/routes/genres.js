@@ -1,5 +1,7 @@
 const router = require("express").Router();
 const { Genre, validate } = require("../models/genre");
+const auth = require("../middlewares/auth");
+const admin = require("../middlewares/admin");
 
 // all genres
 router.get("/", async (req, res) => {
@@ -7,9 +9,8 @@ router.get("/", async (req, res) => {
   res.send(genres);
 });
 
-router.post("/", async (req, res) => {
+router.post("/", auth, async (req, res) => {
   const { error } = validate(req.body);
-
   if (error) {
     res.status(400).send(error.details[0].message);
     return;
@@ -34,13 +35,13 @@ router.put("/:id", async (req, res) => {
   );
 
   if (!genre) {
-    return res.status(404).send("Genre with this id is not avaliable");
+    return res.status(404).send("Genre with this id is not available");
   }
 
   res.send(genre);
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", [auth, admin], async (req, res) => {
   const genre = await Genre.findByIdAndDelete(req.params.id);
   if (!genre) {
     return res.status(404).send("Genre with this id is not avaliable");
